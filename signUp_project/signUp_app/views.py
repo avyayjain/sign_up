@@ -21,8 +21,7 @@ def OperationUser(request):
 
 @api_view(['POST'])
 def ClientUser(request):
-    user = BaseUser.objects.create_user(email=request.data['email'],
-                                        password=request.data['password'])
+    user = BaseUser.objects.create_user(email=request.data['email'], password=request.data['password'])
     user.is_opsuser = False
     user.save()
     serializer = UserSerializer(user)
@@ -63,7 +62,7 @@ def login(request):
     return response
 
 
-@api_view(['GET', 'POST'])
+@api_view(['POST'])
 def getdata(request):
     token = request.COOKIES.get('jwt')
 
@@ -81,7 +80,7 @@ def getdata(request):
     return Response(serializer.data)
 
 
-@api_view(['GET', 'POST'])
+@api_view(['POST'])
 def logout(request):
     response = Response()
     response.delete_cookie('jwt')
