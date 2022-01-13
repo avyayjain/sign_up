@@ -1,5 +1,4 @@
 from .models import BaseUser
-from .serializer import UserSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
@@ -10,25 +9,41 @@ import datetime
 
 @api_view(['POST'])
 def OperationUser(request):
-    user = BaseUser.objects.create_user(email=request.data['email'],
-                                        password=request.data['password'])
+    email = request.data["email"]
+    password = request.data["password"]
+
+    if BaseUser.objects.filter(email = email).exists:
+        return Response({
+            "message" : "User already exist"
+        })
+    user = BaseUser.objects.create_user(email = email,password =  password)
     user.is_opsuser = True
     user.save()
-    serializer = UserSerializer(user)
-    return Response({"data": serializer.data, "message": "Successfully created operations user"},
+
+    return Response({"message": "Successfully created operations user"},
                     status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
 def ClientUser(request):
-    user = BaseUser.objects.create_user(email=request.data['email'], password=request.data['password'])
+    email = request.data["email"]
+    password = request.data["password"]
+    if BaseUser.objects.filter(email = email).exists:
+        return Response({
+            "message" : "User already exist"
+        })
+    user = BaseUser.objects.create_user(email=email, password=password)
     user.is_opsuser = False
     user.save()
-    serializer = UserSerializer(user)
-    return Response({
-        "data": serializer.data,
-        "message": "Successfully created client user"
-    }, status=status.HTTP_201_CREATED)
+
+    # response = Response()
+
+    # response.data = {
+    #     'message': "Client User Signed In"
+    # }
+
+    return Response({"message": "Successfully created client user"},
+                    status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
@@ -37,47 +52,81 @@ def login(request):
     password = request.data['password']
 
     user = BaseUser.objects.filter(email=email).first()
+    print(user.check_password(password))
 
     if user is None:
         raise AuthenticationFailed('USER Not found')
 
-    if not user.check_password(password):
-        raise AuthenticationFailed('incorrect Password')
+    if user.check_password(password) == True and user.is_opsuser == True:
+        payload = {
+            'id': user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+            'iat': datetime.datetime.utcnow()
+        }
 
-    payload = {
-        'id': user.id,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
-        'iat': datetime.datetime.utcnow()
-    }
+        token = jwt.encode(payload, 'secret', algorithm='HS256')
 
-    token = jwt.encode(payload, 'secret', algorithm='HS256')
+        response = Response()
 
-    response = Response()
+        response.set_cookie(key='jwt', value=token, httponly=True)
+        response.data = {
+            'jwt': token,
+            'message': "Ops User Logged in Successfully"
+        }
 
-    response.set_cookie(key='jwt', value=token, httponly=True)
-    response.data = {
-        'jwt': token
-    }
+    elif user.check_password(password) == True and user.is_opsuser == False:
+        payload = {
+            'id': user.id,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+            'iat': datetime.datetime.utcnow()
+        }
 
-    return response
+        token = jwt.encode(payload, 'secret', algorithm='HS256')
+
+        response = Response()
+
+        response.set_cookie(key='jwt', value=token, httponly=True)
+        response.data = {
+            'jwt': token,
+            'message': "Client User Logged in Successfully"
+        }
+    else:
+        response = Response()
+        response.data = {
+            'message': "Incorrect Password"
+        }
+
+    return Response(response.data)
+
+
 
 
 @api_view(['POST'])
-def getdata(request):
-    token = request.COOKIES.get('jwt')
+def statusclient(request):
+    email = request.data.get("email")
+    token = request.headers.get("Authorization")
+    token = jwt.decode(token, "secret", algorithms=["HS256"])
+    user = BaseUser.objects.get(id=token['id'])
+    # print(user.is_opsuser)
+    client = BaseUser.objects.all()
+    if user.is_opsuser:
+        cl_user = BaseUser.objects.get(email = email)
+        if cl_user:
+            if cl_user.is_opsuser:
+                return Response({"message": "Sorry , its an Ops user"})
+            elif cl_user.is_active:
 
-    if not token:
-        raise AuthenticationFailed('Unauthenticated!')
+                cl_user.is_active = False
+                cl_user.save()
+                return Response({"message": "client with email" + email + " is disabled"})
+            else:
+                cl_user.is_active = True
+                cl_user.save()
+                return Response({"message": "client with email" + email + " is enabled"})
 
-    try:
-        payload = jwt.decode(token, 'secret', algorithms=['HS256'])
-    except jwt.ExpiredSignatureError:
-        raise AuthenticationFailed('Unauthenticated!')
-
-    user = BaseUser.objects.filter(id=payload['id']).first()
-    serializer = UserSerializer(user)
-
-    return Response(serializer.data)
+        else:
+            return Response({"message": "Email doesnt exist"})
+    return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])

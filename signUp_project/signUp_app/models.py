@@ -25,5 +25,6 @@ class BaseUser(AbstractBaseUser):
     email = models.EmailField(unique=True)
     is_opsuser = models.BooleanField(default=False)
     # is_clientuser = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     objects = UserManager()
     USERNAME_FIELD = 'email'

@@ -5,6 +5,6 @@ urlpatterns = [
     path('operation/', views.OperationUser),
     path('client/', views.ClientUser),
     path('login/', views.login),
-    path('user/', views.getdata),
+    path('status-client/', views.statusclient),
     path('logout/', views.logout),
 ]
