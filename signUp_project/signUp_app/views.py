@@ -36,12 +36,6 @@ def ClientUser(request):
     user.is_opsuser = False
     user.save()
 
-    # response = Response()
-
-    # response.data = {
-    #     'message': "Client User Signed In"
-    # }
-
     return Response({"message": "Successfully created client user"},
                     status=status.HTTP_201_CREATED)
 
