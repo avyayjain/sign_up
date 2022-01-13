@@ -22,10 +22,8 @@ class UserManager(BaseUserManager):
 
 
 class BaseUser(AbstractBaseUser):
-
     email = models.EmailField(unique=True)
     is_opsuser = models.BooleanField(default=False)
-    is_clientuser = models.BooleanField(default=False)
+    # is_clientuser = models.BooleanField(default=False)
     objects = UserManager()
     USERNAME_FIELD = 'email'
-

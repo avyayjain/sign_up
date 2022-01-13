@@ -8,33 +8,31 @@ import jwt
 import datetime
 
 
-@api_view(['GET', 'POST'])
+@api_view(['POST'])
 def OperationUser(request):
-    if request.method == 'POST':
-        user = BaseUser.objects.create_user(email=request.data['email'],
-                                            password=request.data['password'])
-        user.is_opsuser = True
-        user.save()
-        serializer = UserSerializer(user)
-        return Response({"data": serializer.data, "message": "Successfully created operations user"},
-                        status=status.HTTP_201_CREATED)
+    user = BaseUser.objects.create_user(email=request.data['email'],
+                                        password=request.data['password'])
+    user.is_opsuser = True
+    user.save()
+    serializer = UserSerializer(user)
+    return Response({"data": serializer.data, "message": "Successfully created operations user"},
+                    status=status.HTTP_201_CREATED)
 
 
-@api_view(['GET', 'POST'])
+@api_view(['POST'])
 def ClientUser(request):
-    if request.method == 'POST':
-        user = BaseUser.objects.create_user(email=request.data['email'],
-                                            password=request.data['password'])
-        user.is_clientuser = True
-        user.save()
-        serializer = UserSerializer(user)
-        return Response({
-            "data": serializer.data,
-            "message": "Successfully created client user"
-        }, status=status.HTTP_201_CREATED)
+    user = BaseUser.objects.create_user(email=request.data['email'],
+                                        password=request.data['password'])
+    user.is_opsuser = False
+    user.save()
+    serializer = UserSerializer(user)
+    return Response({
+        "data": serializer.data,
+        "message": "Successfully created client user"
+    }, status=status.HTTP_201_CREATED)
 
 
-@api_view(['GET', 'POST'])
+@api_view(['POST'])
 def login(request):
     email = request.data['email']
     password = request.data['password']
