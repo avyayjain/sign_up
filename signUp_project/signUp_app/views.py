@@ -96,7 +96,7 @@ def login(request):
             'message': "Incorrect Password"
         }
 
-    return Response(response.data)
+    return response
 
 
 
@@ -131,6 +131,7 @@ def statusclient(request):
 
 @api_view(['POST'])
 def logout(request):
+
     response = Response()
     response.delete_cookie('jwt')
     response.data = {
